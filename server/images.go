@@ -434,6 +434,21 @@ func CreateModel(ctx context.Context, name, modelFileDir, quantization string, m
 					config.ModelType = cmp.Or(config.ModelType, format.HumanNumber(baseLayer.GGML.KV().ParameterCount()))
 					config.FileType = cmp.Or(config.FileType, baseLayer.GGML.KV().FileType().String())
 					config.ModelFamilies = append(config.ModelFamilies, baseLayer.GGML.KV().Architecture())
+
+					if n := baseLayer.GGML.KV().ChatTemplate(); n != "unknown" {
+						tmpl, err := llm.NamedTemplate(n)
+						if err != nil {
+							return err
+						}
+
+						layer, err := NewLayer(tmpl, "application/vnd.ollama.image.template")
+						if err != nil {
+							return err
+						}
+
+						layer.status = fmt.Sprintf("using autodetected template %s", n)
+						layers = append(layers, layer)
+					}
 				}
 
 				layers = append(layers, baseLayer.Layer)
